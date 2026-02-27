@@ -1,0 +1,16 @@
+[package]
+name = "cosmic-applet-night-light"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cosmic = { package = "libcosmic", git = "https://github.com/pop-os/libcosmic", default-features = false, features = ["applet-token"] }
+zbus = { version = "4.4.0", features = ["blocking"] }
+env_logger = "0.10.2"
+log = "0.4.29"
+futures-util = "0.3"
+tokio = { version = "1.36", features = ["full"] }
+once_cell = "1"
+tracing = "0.1"
+rust-embed = "8.11.0"
+chrono = "0.4.44"

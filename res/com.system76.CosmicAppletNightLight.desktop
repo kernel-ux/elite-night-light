@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Night Light
+Type=Application
+Exec=/usr/local/bin/cosmic-applet-night-light
+Terminal=false
+Categories=COSMIC;
+Keywords=COSMIC;Iced;
+Icon=night-light-symbolic
+StartupNotify=true
+NoDisplay=true
+X-CosmicApplet=true
+X-CosmicShrinkable=true
+X-CosmicHoverPopup=End
+X-OverflowPriority=10
