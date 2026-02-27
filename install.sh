@@ -19,6 +19,7 @@ fi
 
 # 2. Install Binaries
 echo "[1/4] Installing binaries..."
+chmod +x ./bin/*
 pkexec cp ./bin/cosmic-applet-night-light /usr/local/bin/
 pkexec cp ./bin/cosmic-comp /usr/bin/cosmic-comp
 pkexec cp ./bin/toggle-night-mode /usr/local/bin/
@@ -35,9 +36,8 @@ PANEL_CONFIG="$HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_win
 if [ -f "$PANEL_CONFIG" ]; then
     # Check if already exists
     if ! grep -q "com.system76.CosmicAppletNightLight" "$PANEL_CONFIG"; then
-        # Use sed to insert it after InputSources
-        sed -i 's/"com.system76.CosmicAppletInputSources",/"com.system76.CosmicAppletInputSources",
-    "com.system76.CosmicAppletNightLight",/' "$PANEL_CONFIG"
+        # Better sed command to insert after InputSources
+        sed -i '/"com.system76.CosmicAppletInputSources",/a \    "com.system76.CosmicAppletNightLight",' "$PANEL_CONFIG"
         echo "   -> Applet added to panel configuration."
     else
         echo "   -> Applet already in panel configuration."
