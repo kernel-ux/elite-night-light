@@ -7,14 +7,32 @@ SERVICE="com.system76.CosmicComp"
 OBJ="/com/system76/CosmicComp/NightLight"
 IFACE="com.system76.CosmicComp.NightLight"
 
-# Check if a level was provided (1, 2, or 3)
-if [[ "$1" =~ ^[1-3]$ ]]; then
-    echo "Setting Night Mode to Level $1..."
-    busctl --user call $SERVICE $OBJ $IFACE SetLevel y $1
+# 1. Handle explicit 'off' or '0'
+if [[ "$1" == "off" || "$1" == "0" ]]; then
+    echo "Turning Night Mode OFF..."
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b false
     exit 0
 fi
 
-# Otherwise, just toggle
+# 2. Handle levels 1, 2, or 3
+if [[ "$1" =~ ^[1-3]$ ]]; then
+    echo "Setting Night Mode to Level $1..."
+    busctl --user call $SERVICE $OBJ $IFACE SetLevel y $1
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b true
+    exit 0
+fi
+
+# 3. No arguments? Show help or just toggle
+if [[ -n "$1" ]]; then
+    echo "Usage: toggle-night-mode [off | 1 | 2 | 3]"
+    echo "  off : Disable Night Mode"
+    echo "  1   : Soft Intensity"
+    echo "  2   : Warm Intensity"
+    echo "  3   : Strong Intensity"
+    exit 1
+fi
+
+# Default behavior: Toggle
 STATUS=$(busctl --user call $SERVICE $OBJ $IFACE Enabled)
 
 if [[ "$STATUS" == *"true"* ]]; then

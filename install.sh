@@ -13,44 +13,48 @@ echo "--------------------------------------------------"
 echo "ELITE NIGHT MODE: AUTOMATIC INSTALLER"
 echo "--------------------------------------------------"
 
-# 1. Ask for sudo permissions
+# 1. Ensure the script is run with sudo
 if [ "$EUID" -ne 0 ]; then
-  echo "This script needs to move files to system folders."
-  echo "Please approve the authentication requests that follow."
+  echo "Error: This script must be run with sudo."
+  echo "Please run: sudo ./install.sh"
+  exit 1
 fi
 
 # 2. Install Applet and Scripts
 echo "[1/4] Installing applet and scripts..."
 chmod +x "$BASE_DIR/bin/"*
-pkexec cp "$BASE_DIR/bin/cosmic-applet-night-light" /usr/local/bin/
-pkexec cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
-pkexec chmod +x /usr/local/bin/toggle-night-mode
+cp "$BASE_DIR/bin/cosmic-applet-night-light" /usr/local/bin/
+cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
+chmod +x /usr/local/bin/toggle-night-mode
 
 # 3. Patch Compositor
 echo "[2/4] Patching COSMIC compositor..."
-if pkexec cp "$BASE_DIR/bin/cosmic-comp" /usr/bin/cosmic-comp 2>/dev/null; then
+if cp "$BASE_DIR/bin/cosmic-comp" /usr/bin/cosmic-comp 2>/dev/null; then
     echo "   -> Compositor updated successfully."
 else
     echo "   -> Compositor busy, attempting backup and replace..."
-    pkexec mv /usr/bin/cosmic-comp /usr/bin/cosmic-comp.old
-    pkexec cp "$BASE_DIR/bin/cosmic-comp" /usr/bin/cosmic-comp
+    mv /usr/bin/cosmic-comp /usr/bin/cosmic-comp.old
+    cp "$BASE_DIR/bin/cosmic-comp" /usr/bin/cosmic-comp
     echo "   -> Compositor replaced (restart required for tint to work)."
 fi
 
 # 4. Install Desktop Entry
 echo "[3/4] Registering applet with COSMIC..."
-pkexec cp "$BASE_DIR/res/com.system76.CosmicAppletNightLight.desktop" /usr/share/applications/
+cp "$BASE_DIR/res/com.system76.CosmicAppletNightLight.desktop" /usr/share/applications/
 
 # 5. Update Panel Config (if user is in session)
 echo "[4/4] Adding applet to your panel wings..."
-PANEL_CONFIG="$HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
+# Since we are running as root, we need to find the actual user's home
+ACTUAL_USER=$(logname || echo $SUDO_USER)
+USER_HOME=$(eval echo ~$ACTUAL_USER)
+PANEL_CONFIG="$USER_HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
 
 if [ -f "$PANEL_CONFIG" ]; then
     # Check if already exists
     if ! grep -q "com.system76.CosmicAppletNightLight" "$PANEL_CONFIG"; then
         # Better sed command to insert after InputSources
         sed -i '/"com.system76.CosmicAppletInputSources",/a \    "com.system76.CosmicAppletNightLight",' "$PANEL_CONFIG"
-        echo "   -> Applet added to panel configuration."
+        echo "   -> Applet added to panel configuration for $ACTUAL_USER."
     else
         echo "   -> Applet already in panel configuration."
     fi
@@ -60,8 +64,8 @@ fi
 
 # 6. Restart Services
 echo "Finalizing installation..."
-killall cosmic-panel || true
-killall cosmic-applet-night-light || true
+killall -u $ACTUAL_USER cosmic-panel || true
+killall -u $ACTUAL_USER cosmic-applet-night-light || true
 
 echo "--------------------------------------------------"
 echo "SUCCESS: Elite Night Mode is now live!"

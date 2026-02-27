@@ -53,6 +53,7 @@ pub enum Message {
     SetLevel(u8),
     ToggleAuto(bool),
     CheckSchedule,
+    CheckState,
     Surface(cosmic::surface::Action),
     UpdateState(bool, u8),
     NoOp,
@@ -98,8 +99,10 @@ impl cosmic::Application for Window {
     }
 
     fn subscription(&self) -> cosmic::iced::Subscription<Self::Message> {
-        // Check every 30 seconds if auto is enabled
-        cosmic::iced::time::every(Duration::from_secs(30)).map(|_| Message::CheckSchedule)
+        // Check schedule every 30s, and sync state every 1s
+        let schedule = cosmic::iced::time::every(Duration::from_secs(30)).map(|_| Message::CheckSchedule);
+        let sync = cosmic::iced::time::every(Duration::from_secs(1)).map(|_| Message::CheckState);
+        cosmic::iced::Subscription::batch(vec![schedule, sync])
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
@@ -177,6 +180,19 @@ impl cosmic::Application for Window {
                         }, |m| cosmic::Action::App(m));
                     }
                 }
+            }
+            Message::CheckState => {
+                // Poll the actual D-Bus state
+                return Task::perform(async move {
+                    if let Ok(conn) = Connection::session() {
+                        if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
+                            let enabled = proxy.enabled().unwrap_or(false);
+                            let level = proxy.level().unwrap_or(1);
+                            return Message::UpdateState(enabled, level);
+                        }
+                    }
+                    Message::NoOp
+                }, |m| cosmic::Action::App(m));
             }
             Message::UpdateState(enabled, level) => {
                 self.enabled = enabled;
