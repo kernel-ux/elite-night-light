@@ -134,8 +134,9 @@ impl cosmic::Application for Window {
                 return Task::perform(async move {
                     if let Ok(conn) = Connection::session() {
                         if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                            let _ = proxy.set_level(level);
+                            // Enable FIRST, then set level
                             let _ = proxy.set_enabled(true);
+                            let _ = proxy.set_level(level);
                         }
                     }
                     Message::NoOp
