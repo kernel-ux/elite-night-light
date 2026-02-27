@@ -7,7 +7,7 @@ use cosmic::widget::{list_column, settings, toggler, button};
 use cosmic::iced::widget::row;
 use cosmic::Element;
 use zbus::blocking::Connection;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use chrono::{Local, Timelike};
 
 #[zbus::proxy(
@@ -16,9 +16,13 @@ use chrono::{Local, Timelike};
     default_path = "/com/system76/CosmicComp/NightLight"
 )]
 trait NightLight {
+    #[zbus(name = "Enabled")]
     fn enabled(&self) -> zbus::Result<bool>;
+    #[zbus(name = "Level")]
     fn level(&self) -> zbus::Result<u8>;
+    #[zbus(name = "SetEnabled")]
     fn set_enabled(&self, enabled: bool) -> zbus::Result<()>;
+    #[zbus(name = "SetLevel")]
     fn set_level(&self, level: u8) -> zbus::Result<()>;
 }
 
@@ -30,7 +34,7 @@ pub struct Window {
     enabled: bool,
     level: u8,
     auto: bool,
-    last_auto_toggle: Option<bool>,
+    manual_override: bool,
 }
 
 impl Default for Window {
@@ -41,7 +45,7 @@ impl Default for Window {
             enabled: false,
             level: 1,
             auto: false,
-            last_auto_toggle: None,
+            manual_override: false,
         }
     }
 }
@@ -79,7 +83,6 @@ impl cosmic::Application for Window {
             ..Default::default()
         };
         
-        // Initial state sync
         let task = Task::perform(async move {
             if let Ok(conn) = Connection::session() {
                 if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
@@ -99,7 +102,6 @@ impl cosmic::Application for Window {
     }
 
     fn subscription(&self) -> cosmic::iced::Subscription<Self::Message> {
-        // Check schedule every 30s, and sync state every 1s
         let schedule = cosmic::iced::time::every(Duration::from_secs(30)).map(|_| Message::CheckSchedule);
         let sync = cosmic::iced::time::every(Duration::from_secs(1)).map(|_| Message::CheckState);
         cosmic::iced::Subscription::batch(vec![schedule, sync])
@@ -113,63 +115,47 @@ impl cosmic::Application for Window {
                 }
             }
             Message::ToggleEnabled(toggled) => {
-                if self.enabled != toggled {
-                    self.enabled = toggled;
-                    // If user manually toggles, we should probably disable auto or at least respect this choice
-                    // For now, let's keep auto on but update the 'last_auto_toggle' to match user choice
-                    // so it doesn't immediately flip back.
-                    if self.auto {
-                        self.last_auto_toggle = Some(toggled);
-                    }
-                    
-                    return Task::perform(async move {
-                        if let Ok(conn) = Connection::session() {
-                            if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                                let _ = proxy.set_enabled(toggled);
-                            }
-                        }
-                        Message::NoOp
-                    }, |m| cosmic::Action::App(m));
+                self.enabled = toggled;
+                if self.auto {
+                    self.manual_override = true;
                 }
+                return Task::perform(async move {
+                    if let Ok(conn) = Connection::session() {
+                        if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
+                            let _ = proxy.set_enabled(toggled);
+                        }
+                    }
+                    Message::NoOp
+                }, |m| cosmic::Action::App(m));
             }
             Message::SetLevel(level) => {
-                if self.level != level {
-                    self.level = level;
-                    let enabled = self.enabled;
-                    return Task::perform(async move {
-                        if let Ok(conn) = Connection::session() {
-                            if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                                let _ = proxy.set_level(level);
-                                if !enabled {
-                                    let _ = proxy.set_enabled(true);
-                                }
-                            }
+                self.level = level;
+                self.enabled = true;
+                return Task::perform(async move {
+                    if let Ok(conn) = Connection::session() {
+                        if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
+                            let _ = proxy.set_level(level);
+                            let _ = proxy.set_enabled(true);
                         }
-                        if !enabled {
-                            Message::UpdateState(true, level)
-                        } else {
-                            Message::NoOp
-                        }
-                    }, |m| cosmic::Action::App(m));
-                }
+                    }
+                    Message::NoOp
+                }, |m| cosmic::Action::App(m));
             }
             Message::ToggleAuto(auto) => {
                 self.auto = auto;
+                self.manual_override = false;
                 if auto {
-                    self.last_auto_toggle = None; // Reset so it checks immediately
                     return cosmic::task::message(cosmic::Action::App(Message::CheckSchedule));
                 }
             }
             Message::CheckSchedule => {
-                if self.auto {
+                if self.auto && !self.manual_override {
                     let now = Local::now();
                     let hour = now.hour();
-                    // Night is 7 PM (19) to 7 AM (7)
                     let should_be_enabled = hour >= 19 || hour < 7;
                     
-                    if Some(should_be_enabled) != self.last_auto_toggle && self.enabled != should_be_enabled {
+                    if self.enabled != should_be_enabled {
                         self.enabled = should_be_enabled;
-                        self.last_auto_toggle = Some(should_be_enabled);
                         return Task::perform(async move {
                             if let Ok(conn) = Connection::session() {
                                 if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
@@ -182,11 +168,9 @@ impl cosmic::Application for Window {
                 }
             }
             Message::CheckState => {
-                // Poll the actual D-Bus state via Method Calls
                 return Task::perform(async move {
                     if let Ok(conn) = Connection::session() {
                         if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                            // Call methods instead of reading properties
                             let enabled = proxy.enabled().unwrap_or(false);
                             let level = proxy.level().unwrap_or(1);
                             return Message::UpdateState(enabled, level);
@@ -196,23 +180,18 @@ impl cosmic::Application for Window {
                 }, |m| cosmic::Action::App(m));
             }
             Message::UpdateState(enabled, level) => {
-                // If state changed externally and we are in auto mode, 
-                // we sync our 'last_auto_toggle' to avoid immediate conflict.
+                // If state changed from outside, we reset manual override
+                // to match the new reality if it matches the schedule.
                 if self.auto && self.enabled != enabled {
-                     let now = Local::now();
-                     let hour = now.hour();
-                     let should_be_enabled = hour >= 19 || hour < 7;
-                     if enabled != should_be_enabled {
-                         // User manually overrode the schedule (e.g. turned OFF at night)
-                         // We set last_auto_toggle to the CURRENT hour's expected state
-                         // so the scheduler thinks it already did its job.
-                         self.last_auto_toggle = Some(should_be_enabled);
-                     } else {
-                         // State matches schedule now (maybe it was just turned back ON)
-                         self.last_auto_toggle = Some(enabled);
-                     }
+                    let now = Local::now();
+                    let hour = now.hour();
+                    let should_be_enabled = hour >= 19 || hour < 7;
+                    if enabled == should_be_enabled {
+                        self.manual_override = false;
+                    } else {
+                        self.manual_override = true;
+                    }
                 }
-                
                 self.enabled = enabled;
                 self.level = level;
             }
