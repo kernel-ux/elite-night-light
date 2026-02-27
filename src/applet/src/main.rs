@@ -195,6 +195,23 @@ impl cosmic::Application for Window {
                 }, |m| cosmic::Action::App(m));
             }
             Message::UpdateState(enabled, level) => {
+                // If state changed externally and we are in auto mode, 
+                // we sync our 'last_auto_toggle' to avoid immediate conflict.
+                if self.auto && self.enabled != enabled {
+                     let now = Local::now();
+                     let hour = now.hour();
+                     let should_be_enabled = hour >= 19 || hour < 7;
+                     if enabled != should_be_enabled {
+                         // User manually overrode the schedule (e.g. turned OFF at night)
+                         // We set last_auto_toggle to the CURRENT hour's expected state
+                         // so the scheduler thinks it already did its job.
+                         self.last_auto_toggle = Some(should_be_enabled);
+                     } else {
+                         // State matches schedule now (maybe it was just turned back ON)
+                         self.last_auto_toggle = Some(enabled);
+                     }
+                }
+                
                 self.enabled = enabled;
                 self.level = level;
             }
