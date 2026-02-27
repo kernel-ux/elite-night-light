@@ -182,10 +182,11 @@ impl cosmic::Application for Window {
                 }
             }
             Message::CheckState => {
-                // Poll the actual D-Bus state
+                // Poll the actual D-Bus state via Method Calls
                 return Task::perform(async move {
                     if let Ok(conn) = Connection::session() {
                         if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
+                            // Call methods instead of reading properties
                             let enabled = proxy.enabled().unwrap_or(false);
                             let level = proxy.level().unwrap_or(1);
                             return Message::UpdateState(enabled, level);
