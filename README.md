@@ -3,7 +3,7 @@
 
 > **⚠️ Note on the Demo Video:** You won't see the screen change color in this video! This is because Wayland screen recorders capture the frame *before* the compositor applies our custom "Elite" Night Mode tint. On your actual monitor, the screen will turn a beautiful warm orange! 🧡
 
-<video src="res/demo.mp4" width="100%" controls autoplay loop muted></video>
+![Elite Night Mode Demo](res/demo.gif)
 
 Hey everyone! 👋 
 
