@@ -23,6 +23,7 @@ fi
 # 2. Install Applet and Scripts
 echo "[1/4] Installing applet and scripts..."
 chmod +x "$BASE_DIR/bin/"*
+killall cosmic-applet-night-light || true
 cp "$BASE_DIR/bin/cosmic-applet-night-light" /usr/local/bin/
 cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
 chmod +x /usr/local/bin/toggle-night-mode
