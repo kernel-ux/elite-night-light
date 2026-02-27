@@ -20,24 +20,28 @@ I'm just a **student**, not a professional developer, so please forgive me if yo
 I searched around and tried different things, but I wanted something that felt "Elite." Here’s why this version is cool:
 - **It's Native:** This isn't just a slow script running in the background. It's built directly into the COSMIC engine (`cosmic-comp`), so it's lightning fast and uses almost zero resources. ⚡
 - **It's Smarter:** It has a built-in schedule! It automatically warms up your screen at **7 PM** and clears it up at **7 AM**. ⏰
-- **User First:** Even with "Auto" mode on, it won't fight you. If you manually turn it off or change the intensity, it stays that way until the next day/night cycle.
-- **Easy Mode:** I've already compiled the code for you. You don't need to spend hours installing Rust or waiting for builds—just run the installer and you're good to go!
+- **User First:** Even with "Auto" mode on, it won't fight you. If you manually turn it off or change the intensity, it stays that way until the next day/night cycle. **The UI and Terminal commands are also perfectly synced!**
+- **Easy Mode:** Just run the installer with `sudo` and you're good to go. No complex setup needed!
 
 ### 🚀 How to get it running
 1. Download or clone this folder.
 2. Open your terminal in this folder.
 3. Run this command:
    ```bash
-   chmod +x install.sh && ./install.sh
+   chmod +x install.sh && sudo ./install.sh
    ```
 4. Boom! The icon should appear in your panel (I put it right next to the language/US icon).
+5. **Note:** Since this patches the system compositor, you might need to **Log out and Log back in** for the orange tint to start working.
 
 ### 🖥️ Terminal Commands
 If you're a terminal fan like me, you can also control everything with these commands:
 - `toggle-night-mode` : Just flips it ON or OFF.
+- `toggle-night-mode off` : Turn it OFF explicitly.
 - `toggle-night-mode 1` : Set to **Soft** mode.
 - `toggle-night-mode 2` : Set to **Warm** mode.
 - `toggle-night-mode 3` : Set to **Strong** mode.
+
+All changes made in the terminal reflect instantly in the Applet UI!
 
 ### 🛠 Tech Stuff (If you're curious)
 - **OS:** Pop!_OS 24.04 LTS (Noble)
