@@ -24,14 +24,19 @@ I searched around and tried different things, but I wanted something that felt "
 - **Easy Mode:** Just run the installer with `sudo` and you're good to go. No complex setup needed!
 
 ### 🚀 How to get it running
-1. Download or clone this folder.
-2. Open your terminal in this folder.
-3. Run this command:
-   ```bash
-   chmod +x install.sh && sudo ./install.sh
-   ```
-4. Boom! The icon should appear in your panel (I put it right next to the language/US icon).
-5. **Note:** Since this patches the system compositor, you might need to **Log out and Log back in** for the orange tint to start working.
+
+Open your terminal and run these 4 commands:
+
+```bash
+git clone https://github.com/kernel-ux/cosmic-night-light-elite
+cd cosmic-night-light-elite
+chmod +x install.sh
+sudo ./install.sh
+```
+
+Boom! The icon should appear in your panel (I put it right next to the language/US icon).
+
+**Note:** Since this patches the system compositor, you might need to **Log out and Log back in** for the orange tint to start working correctly.
 
 ### 🖥️ Terminal Commands
 If you're a terminal fan like me, you can also control everything with these commands:
