@@ -6,28 +6,30 @@
 
 set -e
 
+# Get the full path of the directory where the script is located
+BASE_DIR=$(cd "$(dirname "$0")" && pwd)
+
 echo "--------------------------------------------------"
 echo "ELITE NIGHT MODE: AUTOMATIC INSTALLER"
 echo "--------------------------------------------------"
 
-# 1. Ask for sudo permissions
+# 1. Ask for sudo permissions (not actually checking, just informative)
 if [ "$EUID" -ne 0 ]; then
   echo "This script needs to move files to system folders."
-  echo "Please run it with pkexec or sudo if needed."
-  # We will use pkexec internally for key steps.
+  echo "Please approve the authentication requests that follow."
 fi
 
 # 2. Install Binaries
 echo "[1/4] Installing binaries..."
-chmod +x ./bin/*
-pkexec cp ./bin/cosmic-applet-night-light /usr/local/bin/
-pkexec cp ./bin/cosmic-comp /usr/bin/cosmic-comp
-pkexec cp ./bin/toggle-night-mode /usr/local/bin/
+chmod +x "$BASE_DIR/bin/"*
+pkexec cp "$BASE_DIR/bin/cosmic-applet-night-light" /usr/local/bin/
+pkexec cp "$BASE_DIR/bin/cosmic-comp" /usr/bin/cosmic-comp
+pkexec cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
 pkexec chmod +x /usr/local/bin/toggle-night-mode
 
 # 3. Install Desktop Entry
 echo "[2/4] Registering applet with COSMIC..."
-pkexec cp ./res/com.system76.CosmicAppletNightLight.desktop /usr/share/applications/
+pkexec cp "$BASE_DIR/res/com.system76.CosmicAppletNightLight.desktop" /usr/share/applications/
 
 # 4. Update Panel Config (if user is in session)
 echo "[3/4] Adding applet to your panel wings..."
