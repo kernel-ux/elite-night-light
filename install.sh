@@ -21,6 +21,8 @@ fi
 echo "[1/4] Installing binaries..."
 pkexec cp ./bin/cosmic-applet-night-light /usr/local/bin/
 pkexec cp ./bin/cosmic-comp /usr/bin/cosmic-comp
+pkexec cp ./bin/toggle-night-mode /usr/local/bin/
+pkexec chmod +x /usr/local/bin/toggle-night-mode
 
 # 3. Install Desktop Entry
 echo "[2/4] Registering applet with COSMIC..."

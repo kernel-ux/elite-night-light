@@ -32,6 +32,13 @@ I searched around and tried different things, but I wanted something that felt "
    ```
 4. Boom! The icon should appear in your panel (I put it right next to the language/US icon).
 
+### 🖥️ Terminal Commands
+If you're a terminal fan like me, you can also control everything with these commands:
+- `toggle-night-mode` : Just flips it ON or OFF.
+- `toggle-night-mode 1` : Set to **Soft** mode.
+- `toggle-night-mode 2` : Set to **Warm** mode.
+- `toggle-night-mode 3` : Set to **Strong** mode.
+
 ### 🛠 Tech Stuff (If you're curious)
 - **OS:** Pop!_OS 24.04 LTS (Noble)
 - **Desktop:** COSMIC (Wayland)
