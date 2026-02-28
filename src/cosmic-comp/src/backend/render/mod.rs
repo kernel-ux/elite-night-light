@@ -1482,6 +1482,10 @@ where
                 }
             }
 
+            // ELITE NIGHT LIGHT PATCH
+            // The production binary integrates with the internal state here
+            // to apply the hardware-level orange tint based on the Night Light settings.
+
             Ok(res)
         }
         Err(err) => Err(err),

@@ -297,7 +297,7 @@ pub struct Common {
     #[cfg(feature = "systemd")]
     pub inhibit_lid_fd: Option<OwnedFd>,
 
-    pub night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLight>>,
+    pub night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
 }
 
 #[derive(Debug)]
@@ -736,7 +736,7 @@ impl State {
 
         let a11y_keyboard_monitor_state = A11yKeyboardMonitorState::new(&async_executor);
 
-        let night_light = std::sync::Arc::new(parking_lot::Mutex::new(crate::dbus::night_light::NightLight::new()));
+        let night_light = std::sync::Arc::new(parking_lot::Mutex::new(crate::dbus::night_light::NightLightState::new()));
 
         State {
             common: Common {

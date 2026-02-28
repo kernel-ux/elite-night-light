@@ -1,47 +1,45 @@
 use zbus::interface;
+use std::sync::Arc;
+use parking_lot::Mutex;
 
-#[derive(Debug)]
-pub struct NightLight {
-    enabled: bool,
-    level: u8,
+#[derive(Debug, Clone)]
+pub struct NightLightState {
+    pub enabled: bool,
+    pub level: u8,
 }
 
-impl NightLight {
+impl NightLightState {
     pub fn new() -> Self {
         Self {
             enabled: false,
-            level: 2, // Default to Warm
+            level: 2,
         }
-    }
-
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-
-    pub fn get_level(&self) -> u8 {
-        self.level
     }
 }
 
+pub struct NightLightInterface {
+    pub state: Arc<Mutex<NightLightState>>,
+}
+
 #[interface(name = "com.system76.CosmicComp.NightLight")]
-impl NightLight {
+impl NightLightInterface {
     #[zbus(name = "Enabled")]
     fn enabled(&self) -> bool {
-        self.enabled
+        self.state.lock().enabled
     }
 
     #[zbus(name = "Level")]
     fn level(&self) -> u8 {
-        self.level
+        self.state.lock().level
     }
 
     #[zbus(name = "SetEnabled")]
     fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
+        self.state.lock().enabled = enabled;
     }
 
     #[zbus(name = "SetLevel")]
     fn set_level(&mut self, level: u8) {
-        self.level = level;
+        self.state.lock().level = level;
     }
 }

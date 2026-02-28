@@ -102,18 +102,19 @@ pub fn ready(common: &Common) -> Result<()> {
         ),
     ]))?;
 
-    Ok(())
-}
-
-pub async fn ready_async(common: &Common) -> Result<()> {
-    let connection = Connection::session()?;
-    let night_light = common.night_light.clone();
-    
-    // We use a separate thread for the object server to not block the main compositor
+    // ELITE NIGHT LIGHT: Register our custom DBus interface
+    let state = common.night_light.clone();
     std::thread::spawn(move || {
-        let night_light_lock = night_light.lock();
-        // This is a simplified representation for the source code release
-        // In the real binary, this is integrated into the compositor's zbus loop
+        if let Ok(conn) = Connection::session() {
+            let interface = night_light::NightLightInterface { state };
+            if let Ok(_) = conn.request_name("com.system76.CosmicComp") {
+                if let Ok(_) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface) {
+                    loop {
+                        std::thread::park(); // Keep thread alive
+                    }
+                }
+            }
+        }
     });
 
     Ok(())
