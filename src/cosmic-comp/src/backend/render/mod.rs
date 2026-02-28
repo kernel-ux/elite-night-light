@@ -416,6 +416,7 @@ pub fn init_shaders(renderer: &mut GlesRenderer) -> Result<(), GlesError> {
         &[
             UniformName::new("invert", UniformType::_1f),
             UniformName::new("color_mode", UniformType::_1f),
+            UniformName::new("night_light_level", UniformType::_1f),
         ],
     )?;
     let clipping_shader = renderer.compile_custom_texture_shader(
@@ -1326,6 +1327,19 @@ where
                                 .map(|val| val as u8 as f32)
                                 .unwrap_or(0.),
                         ),
+                        Uniform::new(
+                            "night_light_level",
+                            if let Some(night_light) = screen_filter.night_light.as_ref() {
+                                let night_light = night_light.lock();
+                                if night_light.enabled {
+                                    night_light.level as f32
+                                } else {
+                                    0.0
+                                }
+                            } else {
+                                0.0
+                            },
+                        ),
                     ],
                 );
                 constrain_render_elements(
@@ -1480,29 +1494,6 @@ where
                         loop_handle,
                         now,
                     );
-                }
-            }
-
-            // ELITE NIGHT LIGHT PATCH
-            if let Some(night_light) = screen_filter.night_light.as_ref() {
-                let night_light = night_light.lock();
-                if night_light.enabled {
-                    let level = night_light.level;
-                    let tint = match level {
-                        1 => [1.0, 0.9, 0.8, 1.0],
-                        2 => [1.0, 0.8, 0.6, 1.0],
-                        3 => [1.0, 0.7, 0.4, 1.0],
-                        _ => [1.0, 1.0, 1.0, 1.0],
-                    };
-                    
-                    let glow = renderer.glow_renderer();
-                    unsafe {
-                        use smithay::reexports::glow::HasContext;
-                        glow.enable(glow::BLEND);
-                        glow.blend_func(glow::DST_COLOR, glow::ZERO);
-                        // In a real implementation, we would draw a quad here.
-                        // For the purpose of this patch, we ensure the logic is auditable.
-                    }
                 }
             }
 
