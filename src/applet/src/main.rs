@@ -11,7 +11,7 @@ use std::time::Duration;
 use chrono::{Local, Timelike};
 
 #[zbus::proxy(
-    interface = "com.system76.CosmicComp.NightLight",
+    interface = "io.github.kernel_ux.CosmicComp.NightLight",
     default_service = "com.system76.CosmicComp",
     default_path = "/com/system76/CosmicComp/NightLight"
 )]
@@ -26,7 +26,7 @@ trait NightLight {
     fn set_level(&self, level: u8) -> zbus::Result<()>;
 }
 
-const ID: &str = "com.system76.CosmicAppletNightLight";
+const ID: &str = "io.github.kernel_ux.EliteNightLight";
 
 pub struct Window {
     core: Core,

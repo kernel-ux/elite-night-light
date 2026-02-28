@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Elite Night Light
+Comment=Native Night Mode for COSMIC
+Exec=cosmic-applet-night-light
+Terminal=false
+Categories=System;Settings;
+Icon=weather-clear-night-symbolic
+X-CosmicApplet=true
+X-CosmicAppletId=io.github.kernel_ux.EliteNightLight
