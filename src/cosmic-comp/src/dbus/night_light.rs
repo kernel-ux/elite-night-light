@@ -23,7 +23,7 @@ impl NightLight {
     }
 }
 
-#[interface(name = "io.github.kernel_ux.CosmicComp.NightLight")]
+#[interface(name = "com.system76.CosmicComp.NightLight")]
 impl NightLight {
     #[zbus(name = "Enabled")]
     fn enabled(&self) -> bool {

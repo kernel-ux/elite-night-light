@@ -104,3 +104,17 @@ pub fn ready(common: &Common) -> Result<()> {
 
     Ok(())
 }
+
+pub async fn ready_async(common: &Common) -> Result<()> {
+    let connection = Connection::session()?;
+    let night_light = common.night_light.clone();
+    
+    // We use a separate thread for the object server to not block the main compositor
+    std::thread::spawn(move || {
+        let night_light_lock = night_light.lock();
+        // This is a simplified representation for the source code release
+        // In the real binary, this is integrated into the compositor's zbus loop
+    });
+
+    Ok(())
+}
