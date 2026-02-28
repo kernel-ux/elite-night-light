@@ -104,22 +104,28 @@ pub fn ready(common: &Common) -> Result<()> {
 
     // ELITE NIGHT LIGHT: Register our custom DBus interface under a UNIQUE name
     let state = common.night_light.clone();
-    match Connection::session() {
-        Ok(conn) => {
-            let interface = night_light::NightLightInterface { state };
-            if let Err(e) = conn.object_server().at("/io/github/kernel_ux/EliteNightLight", interface) {
-                error!("Elite Night Light: CRITICAL - Failed to export object: {}", e);
-            } else {
-                // Request a UNIQUE name that doesn't conflict with com.system76
-                if let Err(e) = conn.request_name("io.github.kernel_ux.EliteNightLight") {
-                    error!("Elite Night Light: CRITICAL - Failed to request unique name: {}", e);
+    std::thread::spawn(move || {
+        // Sleep for 2 seconds to ensure we don't race with the session bus startup
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        match Connection::session() {
+            Ok(conn) => {
+                let interface = night_light::NightLightInterface { state };
+                if let Err(e) = conn.object_server().at("/io/github/kernel_ux/EliteNightLight", interface) {
+                    error!("Elite Night Light: CRITICAL - Failed to export object: {}", e);
                 } else {
-                    info!("Elite Night Light: Unique D-Bus service registered successfully.");
+                    // Request a UNIQUE name that doesn't conflict with com.system76
+                    if let Err(e) = conn.request_name("io.github.kernel_ux.EliteNightLight") {
+                        error!("Elite Night Light: CRITICAL - Failed to request unique name: {}", e);
+                    } else {
+                        info!("Elite Night Light: Unique D-Bus service registered successfully.");
+                    }
                 }
+                // Keep the connection alive
+                loop { std::thread::park(); }
             }
+            Err(e) => error!("Elite Night Light: CRITICAL - Failed to connect to session bus: {}", e),
         }
-        Err(e) => error!("Elite Night Light: CRITICAL - Failed to connect to session bus: {}", e),
-    }
+    });
 
     Ok(())
 }
