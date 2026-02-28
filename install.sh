@@ -47,8 +47,12 @@ echo "[4/4] Adding applet to your panel wings..."
 ACTUAL_USER=$(logname || echo $SUDO_USER)
 USER_HOME=$(eval echo ~$ACTUAL_USER)
 PANEL_CONFIG="$USER_HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
+OLD_ID="com.system76.CosmicAppletNightLight"
 
 if [ -f "$PANEL_CONFIG" ]; then
+    # Clean up old versions first to prevent "two moons"
+    sed -i "/$OLD_ID/d" "$PANEL_CONFIG"
+    
     if ! grep -q "$APP_ID" "$PANEL_CONFIG"; then
         sed -i '/"com.system76.CosmicAppletInputSources",/a \    "'"$APP_ID"'",' "$PANEL_CONFIG"
         echo "   -> Applet added to panel configuration for $ACTUAL_USER."
