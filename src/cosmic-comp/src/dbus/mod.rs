@@ -102,20 +102,20 @@ pub fn ready(common: &Common) -> Result<()> {
         ),
     ]))?;
 
-    // ELITE NIGHT LIGHT: We must use the blocking connection here 
-    // because ready() is called in a way that async tasks might be dropped or delayed.
+    // ELITE NIGHT LIGHT: Register our custom DBus interface under a UNIQUE name
     let state = common.night_light.clone();
-    let interface = night_light::NightLightInterface { state };
-    
     match Connection::session() {
         Ok(conn) => {
-            // We use the same connection that the compositor is already using!
-            if let Err(e) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface) {
+            let interface = night_light::NightLightInterface { state };
+            if let Err(e) = conn.object_server().at("/io/github/kernel_ux/EliteNightLight", interface) {
                 error!("Elite Night Light: CRITICAL - Failed to export object: {}", e);
             } else {
-                // DON'T request name here, the compositor handles its own name claim elsewhere.
-                // We just attach our object to the existing session connection.
-                info!("Elite Night Light: D-Bus object exported successfully on session bus.");
+                // Request a UNIQUE name that doesn't conflict with com.system76
+                if let Err(e) = conn.request_name("io.github.kernel_ux.EliteNightLight") {
+                    error!("Elite Night Light: CRITICAL - Failed to request unique name: {}", e);
+                } else {
+                    info!("Elite Night Light: Unique D-Bus service registered successfully.");
+                }
             }
         }
         Err(e) => error!("Elite Night Light: CRITICAL - Failed to connect to session bus: {}", e),

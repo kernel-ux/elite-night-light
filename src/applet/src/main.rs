@@ -11,9 +11,9 @@ use std::time::{Duration, Instant};
 use chrono::{Local, Timelike};
 
 #[zbus::proxy(
-    interface = "com.system76.CosmicComp.NightLight",
-    default_service = "com.system76.CosmicComp",
-    default_path = "/com/system76/CosmicComp/NightLight"
+    interface = "io.github.kernel_ux.EliteNightLight.Manager",
+    default_service = "io.github.kernel_ux.EliteNightLight",
+    default_path = "/io/github/kernel_ux/EliteNightLight"
 )]
 trait NightLight {
     #[zbus(name = "Enabled")]

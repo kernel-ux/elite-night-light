@@ -21,7 +21,7 @@ pub struct NightLightInterface {
     pub state: Arc<Mutex<NightLightState>>,
 }
 
-#[interface(name = "com.system76.CosmicComp.NightLight")]
+#[interface(name = "io.github.kernel_ux.EliteNightLight.Manager")]
 impl NightLightInterface {
     #[zbus(name = "Enabled")]
     fn enabled(&self) -> bool {

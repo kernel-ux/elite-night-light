@@ -3,9 +3,9 @@
 # Elite Night Mode Toggle - Terminal Edition
 # Matches our custom engine perfectly
 
-SERVICE="com.system76.CosmicComp"
-OBJ="/com/system76/CosmicComp/NightLight"
-IFACE="com.system76.CosmicComp.NightLight"
+SERVICE="io.github.kernel_ux.EliteNightLight"
+OBJ="/io/github/kernel_ux/EliteNightLight"
+IFACE="io.github.kernel_ux.EliteNightLight.Manager"
 
 # 1. Handle explicit 'off' or '0'
 if [[ "$1" == "off" || "$1" == "0" ]]; then
