@@ -361,6 +361,7 @@ pub fn render_workspace_to_buffer(
                 handle,
                 cursor_mode,
                 ElementFilter::ExcludeWorkspaceOverview,
+                &crate::backend::render::ScreenFilterStorage::default(),
             )
             .map(|res| res.0)
         } else {
@@ -380,6 +381,7 @@ pub fn render_workspace_to_buffer(
                 handle,
                 cursor_mode,
                 ElementFilter::ExcludeWorkspaceOverview,
+                &crate::backend::render::ScreenFilterStorage::default(),
             )
             .map(|res| res.0)
         }

@@ -1245,6 +1245,9 @@ where
             );
         }
 
+        let night_light_clone = screen_filter.night_light.clone();
+        let filter_clone = screen_filter.filter.clone();
+        
         let state = screen_filter.state.as_mut().unwrap();
         let mut result = Err(RenderError::OutputNoMode(OutputNoMode));
         state
@@ -1252,6 +1255,12 @@ where
             .render()
             .draw::<_, RenderError<R::Error>>(|tex| {
                 let mut target = renderer.bind(tex).map_err(RenderError::Rendering)?;
+                let dummy_storage = ScreenFilterStorage {
+                    filter: filter_clone,
+                    state: None,
+                    night_light: night_light_clone,
+                };
+                
                 result = render_workspace(
                     gpu,
                     renderer,
@@ -1267,6 +1276,7 @@ where
                     workspace,
                     cursor_mode,
                     element_filter,
+                    &dummy_storage,
                 );
                 std::mem::drop(target);
                 postprocess_texture = Some(tex.clone());
@@ -1380,6 +1390,7 @@ where
             workspace,
             cursor_mode,
             element_filter,
+            screen_filter,
         )
     };
 
@@ -1516,6 +1527,7 @@ pub fn render_workspace<'d, R>(
     current: (WorkspaceHandle, usize),
     cursor_mode: CursorMode,
     element_filter: ElementFilter,
+    screen_filter: &ScreenFilterStorage,
 ) -> Result<(RenderOutputResult<'d>, Vec<CosmicElement<R>>), RenderError<R::Error>>
 where
     R: Renderer + ImportAll + ImportMem + ExportMem + Bind<Dmabuf> + AsGlowRenderer,
