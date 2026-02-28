@@ -7,7 +7,7 @@ use cosmic::widget::{list_column, settings, toggler, button};
 use cosmic::iced::widget::row;
 use cosmic::Element;
 use zbus::blocking::Connection;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use chrono::{Local, Timelike};
 
 #[zbus::proxy(
@@ -35,6 +35,7 @@ pub struct Window {
     level: u8,
     auto: bool,
     manual_override: bool,
+    last_change: Instant,
 }
 
 impl Default for Window {
@@ -46,6 +47,7 @@ impl Default for Window {
             level: 1,
             auto: false,
             manual_override: false,
+            last_change: Instant::now() - Duration::from_secs(10),
         }
     }
 }
@@ -116,6 +118,7 @@ impl cosmic::Application for Window {
             }
             Message::ToggleEnabled(toggled) => {
                 self.enabled = toggled;
+                self.last_change = Instant::now();
                 if self.auto {
                     self.manual_override = true;
                 }
@@ -131,10 +134,10 @@ impl cosmic::Application for Window {
             Message::SetLevel(level) => {
                 self.level = level;
                 self.enabled = true;
+                self.last_change = Instant::now();
                 return Task::perform(async move {
                     if let Ok(conn) = Connection::session() {
                         if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                            // Enable FIRST, then set level
                             let _ = proxy.set_enabled(true);
                             let _ = proxy.set_level(level);
                         }
@@ -145,12 +148,13 @@ impl cosmic::Application for Window {
             Message::ToggleAuto(auto) => {
                 self.auto = auto;
                 self.manual_override = false;
+                self.last_change = Instant::now();
                 if auto {
                     return cosmic::task::message(cosmic::Action::App(Message::CheckSchedule));
                 }
             }
             Message::CheckSchedule => {
-                if self.auto && !self.manual_override {
+                if self.auto && !self.manual_override && self.last_change.elapsed() > Duration::from_secs(5) {
                     let now = Local::now();
                     let hour = now.hour();
                     let should_be_enabled = hour >= 19 || hour < 7;
@@ -169,32 +173,34 @@ impl cosmic::Application for Window {
                 }
             }
             Message::CheckState => {
-                return Task::perform(async move {
-                    if let Ok(conn) = Connection::session() {
-                        if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
-                            let enabled = proxy.enabled().unwrap_or(false);
-                            let level = proxy.level().unwrap_or(1);
-                            return Message::UpdateState(enabled, level);
+                if self.last_change.elapsed() > Duration::from_secs(3) {
+                    return Task::perform(async move {
+                        if let Ok(conn) = Connection::session() {
+                            if let Ok(proxy) = NightLightProxyBlocking::new(&conn) {
+                                let enabled = proxy.enabled().unwrap_or(false);
+                                let level = proxy.level().unwrap_or(1);
+                                return Message::UpdateState(enabled, level);
+                            }
                         }
-                    }
-                    Message::NoOp
-                }, |m| cosmic::Action::App(m));
+                        Message::NoOp
+                    }, |m| cosmic::Action::App(m));
+                }
             }
             Message::UpdateState(enabled, level) => {
-                // If state changed from outside, we reset manual override
-                // to match the new reality if it matches the schedule.
-                if self.auto && self.enabled != enabled {
-                    let now = Local::now();
-                    let hour = now.hour();
-                    let should_be_enabled = hour >= 19 || hour < 7;
-                    if enabled == should_be_enabled {
-                        self.manual_override = false;
-                    } else {
-                        self.manual_override = true;
+                if self.last_change.elapsed() > Duration::from_secs(3) {
+                    if self.auto && self.enabled != enabled {
+                        let now = Local::now();
+                        let hour = now.hour();
+                        let should_be_enabled = hour >= 19 || hour < 7;
+                        if enabled == should_be_enabled {
+                            self.manual_override = false;
+                        } else {
+                            self.manual_override = true;
+                        }
                     }
+                    self.enabled = enabled;
+                    self.level = level;
                 }
-                self.enabled = enabled;
-                self.level = level;
             }
             Message::Surface(a) => {
                 return cosmic::task::message(cosmic::Action::Cosmic(
@@ -233,8 +239,7 @@ impl cosmic::Application for Window {
                             popup_settings.positioner.anchor_rect = Rectangle {
                                 x: (bounds.x - offset.x) as i32,
                                 y: (bounds.y - offset.y) as i32,
-                                width: bounds.width as i32,
-                                height: bounds.height as i32,
+                                width: bounds.width as i32, height: bounds.height as i32,
                             };
 
                             popup_settings
