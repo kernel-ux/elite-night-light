@@ -8,7 +8,7 @@ use cosmic_comp_config::output::comp::OutputState;
 use futures_executor::{ThreadPool, block_on};
 use futures_util::stream::StreamExt;
 use std::collections::HashMap;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 use zbus::blocking::{Connection, fdo::DBusProxy};
 
 pub mod a11y_keyboard_monitor;
@@ -23,6 +23,11 @@ pub fn init(
     executor: &ThreadPool,
 ) -> Result<Vec<RegistrationToken>> {
     let mut tokens = Vec::new();
+
+    // ELITE NIGHT LIGHT: We initialize the DBus service here
+    // We need to wait for the State to be initialized to get Common, 
+    // but init is called BEFORE State::new.
+    // However, we can spawn a task that waits for the name.
 
     match block_on(power::init()) {
         Ok(power_daemon) => {
@@ -102,18 +107,24 @@ pub fn ready(common: &Common) -> Result<()> {
         ),
     ]))?;
 
-    // ELITE NIGHT LIGHT: Register our custom DBus interface
+    // ELITE NIGHT LIGHT: Register our custom DBus interface properly
     let state = common.night_light.clone();
-    std::thread::spawn(move || {
-        if let Ok(conn) = Connection::session() {
-            let interface = night_light::NightLightInterface { state };
-            if let Ok(_) = conn.request_name("com.system76.CosmicComp") {
-                if let Ok(_) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface) {
-                    loop {
-                        std::thread::park(); // Keep thread alive
-                    }
+    let executor = common.async_executor.clone();
+    
+    executor.spawn_ok(async move {
+        match zbus::Connection::session().await {
+            Ok(conn) => {
+                let interface = night_light::NightLightInterface { state };
+                if let Err(e) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface).await {
+                    error!("Elite Night Light: Failed to export object: {}", e);
+                } else if let Err(e) = conn.request_name("com.system76.CosmicComp").await {
+                    // It's okay if name is already taken (e.g. by original compositor logic if we missed it)
+                    warn!("Elite Night Light: Failed to request name: {}", e);
+                } else {
+                    info!("Elite Night Light: D-Bus service registered successfully.");
                 }
             }
+            Err(e) => error!("Elite Night Light: Failed to connect to session bus: {}", e),
         }
     });
 
