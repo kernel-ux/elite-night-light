@@ -31,7 +31,14 @@ chmod +x install.sh
 sudo ./install.sh
 ```
 
-**Note:** Since this replaces the system compositor, you must **Log out and Log back in** for the changes to take effect.
+**Note:** Since this replaces the system compositor, you must **Log out and Log back in** for the changes to take effect. The installer also "locks" the `cosmic-comp` package so official system updates don't overwrite your Elite patch.
+
+### 🔄 How to uninstall / Revert to Official
+If you ever want to go back to the stock System76 compositor, just run:
+```bash
+sudo apt-mark unhold cosmic-comp
+sudo apt install --reinstall cosmic-comp
+```
 
 ### 🖥️ Terminal Commands
 - `toggle-night-mode` : Toggle ON/OFF.

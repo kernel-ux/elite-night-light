@@ -62,6 +62,8 @@ if [ -f "$PANEL_CONFIG" ]; then
 fi
 
 echo "Finalizing installation..."
+# Lock the package so Pop!_OS updates don't overwrite our elite patch
+apt-mark hold cosmic-comp || true
 killall -u $ACTUAL_USER cosmic-panel || true
 
 echo "--------------------------------------------------"
