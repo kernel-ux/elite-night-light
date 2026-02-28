@@ -1,5 +1,6 @@
 use zbus::interface;
 
+#[derive(Debug)]
 pub struct NightLight {
     enabled: bool,
     level: u8,

@@ -44,6 +44,7 @@ use crate::{
 use cosmic::Theme;
 use element::FromGlesError;
 use smithay::{
+    reexports::glow,
     backend::{
         allocator::{Fourcc, dmabuf::Dmabuf},
         drm::{DrmDeviceFd, DrmNode},
@@ -1542,29 +1543,6 @@ where
         &elements,
         CLEAR_COLOR, // TODO use a theme neutral color
     );
-
-    // ELITE NIGHT LIGHT PATCH
-    if let Some(state) = loop_handle.get_data() {
-        let night_light = state.common.night_light.lock();
-        if night_light.is_enabled() {
-            let level = night_light.get_level();
-            let tint = match level {
-                1 => [1.0, 0.9, 0.8, 1.0],
-                2 => [1.0, 0.8, 0.6, 1.0],
-                3 => [1.0, 0.7, 0.4, 1.0],
-                _ => [1.0, 1.0, 1.0, 1.0],
-            };
-            
-            let glow = renderer.glow_renderer();
-            unsafe {
-                use glow::HasContext;
-                glow.enable(glow::BLEND);
-                glow.blend_func(glow::DST_COLOR, glow::ZERO);
-                // Draw a full-screen quad with the tint color
-                // (Simplified for this patch, real implementation uses a shader)
-            }
-        }
-    }
 
     res.map(|res| (res, elements))
 }
