@@ -405,6 +405,7 @@ impl Config {
         loop_handle: &LoopHandle<'static, State>,
         workspace_state: &mut WorkspaceUpdateGuard<'_, State>,
         xdg_activation_state: &XdgActivationState,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
         startup_done: Arc<AtomicBool>,
         clock: &Clock<Monotonic>,
     ) -> anyhow::Result<()> {
@@ -473,6 +474,7 @@ impl Config {
                 shell.clone(),
                 workspace_state,
                 xdg_activation_state,
+                night_light.clone(),
                 startup_done.clone(),
                 clock,
             ) {
@@ -500,6 +502,7 @@ impl Config {
                         shell.clone(),
                         workspace_state,
                         xdg_activation_state,
+                        night_light.clone(),
                         startup_done,
                         clock,
                     )
@@ -559,6 +562,7 @@ impl Config {
                     shell.clone(),
                     workspace_state,
                     xdg_activation_state,
+                    night_light.clone(),
                     startup_done.clone(),
                     clock,
                 )

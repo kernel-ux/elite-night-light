@@ -1182,7 +1182,7 @@ pub struct ScreenFilterStorage {
 }
 
 #[profiling::function]
-pub fn render_output<'d, R>(
+pub fn render_output<'d, R, L>(
     gpu: Option<&DrmNode>,
     renderer: &mut R,
     target: &mut R::Framebuffer<'_>,
@@ -1193,9 +1193,10 @@ pub fn render_output<'d, R>(
     output: &Output,
     cursor_mode: CursorMode,
     screen_filter: &'d mut ScreenFilterStorage,
-    loop_handle: &calloop::LoopHandle<'static, State>,
+    loop_handle: &calloop::LoopHandle<'static, L>,
 ) -> Result<RenderOutputResult<'d>, RenderError<R::Error>>
 where
+    L: 'static,
     R: Renderer
         + ImportAll
         + ImportMem
@@ -1330,12 +1331,8 @@ where
                         Uniform::new(
                             "night_light_level",
                             if let Some(night_light) = screen_filter.night_light.as_ref() {
-                                let night_light = night_light.lock();
-                                if night_light.enabled {
-                                    night_light.level as f32
-                                } else {
-                                    0.0
-                                }
+                                let state = night_light.lock();
+                                if state.enabled { state.level as f32 } else { 0.0 }
                             } else {
                                 0.0
                             },

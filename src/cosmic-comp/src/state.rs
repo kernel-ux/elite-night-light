@@ -488,6 +488,7 @@ impl LockedBackend<'_> {
         shell: Arc<parking_lot::RwLock<Shell>>,
         workspace_state: &mut WorkspaceUpdateGuard<'_, State>,
         xdg_activation_state: &XdgActivationState,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
         startup_done: Arc<AtomicBool>,
         clock: &Clock<Monotonic>,
     ) -> Result<(), anyhow::Error> {
@@ -528,6 +529,7 @@ impl LockedBackend<'_> {
                 loop_handle,
                 screen_filter,
                 shell.clone(),
+                night_light,
                 startup_done,
                 clock,
             ),

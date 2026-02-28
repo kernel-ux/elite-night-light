@@ -3,7 +3,7 @@
 use crate::{
     backend::render::{
         CLEAR_COLOR, CursorMode, GlMultiError, GlMultiRenderer, PostprocessOutputConfig,
-        PostprocessShader, PostprocessState,
+        PostprocessShader, PostprocessState, ScreenFilterStorage, render_output,
         element::{CosmicElement, DamageElement},
         init_shaders, output_elements,
     },
@@ -149,6 +149,7 @@ pub struct SurfaceThreadState {
     postprocess_textures: HashMap<DrmNode, PostprocessState>,
 
     shell: Arc<parking_lot::RwLock<Shell>>,
+    pub night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
 
     loop_handle: LoopHandle<'static, Self>,
     clock: Clock<Monotonic>,
@@ -248,6 +249,7 @@ impl Surface {
         evlh: &LoopHandle<'static, State>,
         screen_filter: ScreenFilter,
         shell: Arc<parking_lot::RwLock<Shell>>,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
         startup_done: Arc<AtomicBool>,
     ) -> Result<Self> {
         let (tx, rx) = channel::<ThreadCommand>();
@@ -256,6 +258,7 @@ impl Surface {
 
         let active_clone = active.clone();
         let output_clone = output.clone();
+        let night_light_clone = night_light.clone();
 
         let thread = std::thread::Builder::new()
             .name(format!("surface-{}", output.name()))
@@ -267,6 +270,7 @@ impl Surface {
                     shell,
                     active_clone,
                     screen_filter,
+                    night_light_clone,
                     tx2,
                     rx,
                     startup_done,
@@ -495,6 +499,7 @@ fn surface_thread(
     shell: Arc<parking_lot::RwLock<Shell>>,
     active: Arc<AtomicBool>,
     screen_filter: ScreenFilter,
+    night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
     thread_sender: Sender<SurfaceCommand>,
     thread_receiver: Channel<ThreadCommand>,
     startup_done: Arc<AtomicBool>,
@@ -542,11 +547,12 @@ fn surface_thread(
         output,
         mirroring: None,
         screen_filter,
+        night_light,
         postprocess_textures: HashMap::new(),
-
         shell,
         loop_handle: event_loop.handle(),
         clock: Clock::new(),
+
         #[cfg(feature = "debug")]
         egui,
 
@@ -1222,13 +1228,23 @@ impl SurfaceThreadState {
                     }
 
                     let mut fb = renderer.bind(tex)?;
-                    let res = match postprocess_state.damage_tracker.render_output(
+                    let mut screen_filter_state = ScreenFilterStorage::default();
+                    screen_filter_state.night_light = Some(self.night_light.clone());
+
+                    let res = match render_output(
+                        Some(&self.target_node),
                         &mut renderer,
                         &mut fb,
+                        &mut postprocess_state.damage_tracker,
                         1,
-                        &elements,
-                        CLEAR_COLOR,
+                        &self.shell,
+                        self.clock.now(),
+                        &self.output,
+                        CursorMode::None,
+                        &mut screen_filter_state,
+                        &self.loop_handle,
                     ) {
+
                         Ok(res) => res,
                         Err(RenderError::Rendering(err)) => return Err(err),
                         Err(RenderError::OutputNoMode(_)) => unreachable!(),

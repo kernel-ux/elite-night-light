@@ -39,7 +39,7 @@ pub fn init(
                         };
                         let mut added = Vec::new();
                         for node in nodes {
-                            match state.device_changed(node.dev_id()) {
+                            match state.device_changed(node.dev_id(), state.common.night_light.clone()) {
                                 Ok(outputs) => added.extend(outputs),
                                 Err(err) => {
                                     tracing::error!(?err, "Failed to update drm device {}.", node)

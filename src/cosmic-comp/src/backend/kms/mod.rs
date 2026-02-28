@@ -135,7 +135,7 @@ pub fn init_backend(
     // manually add already present gpus
     let mut outputs = Vec::new();
     for (dev, path) in udev_dispatcher.as_source_ref().device_list() {
-        match state.device_added(dev, path, dh) {
+        match state.device_added(dev, path, dh, state.common.night_light.clone()) {
             Ok(added) => outputs.extend(added),
             Err(err) => warn!("Failed to add device {}: {:?}", path.display(), err),
         }
@@ -298,10 +298,10 @@ fn init_udev(
                 device_id,
                 ref path,
             } => state
-                .device_added(device_id, path, &dh)
+                .device_added(device_id, path, &dh, state.common.night_light.clone())
                 .with_context(|| format!("Failed to add drm device: {}", device_id)),
             UdevEvent::Changed { device_id } => state
-                .device_changed(device_id)
+                .device_changed(device_id, state.common.night_light.clone())
                 .with_context(|| format!("Failed to update drm device: {}", device_id)),
             UdevEvent::Removed { device_id } => state
                 .device_removed(device_id, &dh)
@@ -384,7 +384,7 @@ impl State {
                     }
                 };
                 if state.backend.kms().drm_devices.contains_key(&drm_node) {
-                    match state.device_changed(dev) {
+                    match state.device_changed(dev, state.common.night_light.clone()) {
                         Ok(outputs) => added.extend(outputs),
                         Err(err) => {
                             error!(?err, "Failed to update drm device {}.", path.display(),)
@@ -392,7 +392,7 @@ impl State {
                     }
                 } else {
                     let dh = state.common.display_handle.clone();
-                    match state.device_added(dev, path, &dh) {
+                    match state.device_added(dev, path, &dh, state.common.night_light.clone()) {
                         Ok(outputs) => added.extend(outputs),
                         Err(err) => error!(?err, "Failed to add drm device {}.", path.display(),),
                     }
@@ -711,6 +711,7 @@ impl KmsGuard<'_> {
         loop_handle: &LoopHandle<'static, State>,
         screen_filter: &ScreenFilter,
         shell: Arc<parking_lot::RwLock<Shell>>,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
         startup_done: Arc<AtomicBool>,
         clock: &Clock<Monotonic>,
     ) -> Result<(), anyhow::Error> {
@@ -819,6 +820,7 @@ impl KmsGuard<'_> {
                         loop_handle,
                         screen_filter.clone(),
                         shell.clone(),
+                        night_light.clone(),
                         startup_done.clone(),
                     )?;
                     if output.mirroring().is_none() {

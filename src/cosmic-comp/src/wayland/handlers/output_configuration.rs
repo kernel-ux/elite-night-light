@@ -159,6 +159,7 @@ impl State {
             self.common.shell.clone(),
             &mut self.common.workspace_state.update(),
             &self.common.xdg_activation_state,
+            self.common.night_light.clone(),
             self.common.startup_done.clone(),
             &self.common.clock,
         );
@@ -182,6 +183,7 @@ impl State {
                     self.common.shell.clone(),
                     &mut self.common.workspace_state.update(),
                     &self.common.xdg_activation_state,
+                    self.common.night_light.clone(),
                     self.common.startup_done.clone(),
                     &self.common.clock,
                 ) {

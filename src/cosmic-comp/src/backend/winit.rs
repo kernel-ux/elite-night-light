@@ -235,6 +235,7 @@ pub fn init_backend(
             &state.common.event_loop_handle,
             &mut state.common.workspace_state.update(),
             &state.common.xdg_activation_state,
+            state.common.night_light.clone(),
             state.common.startup_done.clone(),
             &state.common.clock,
         ) {

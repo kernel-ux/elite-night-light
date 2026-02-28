@@ -178,9 +178,15 @@ impl State {
         dev: dev_t,
         path: &Path,
         dh: &DisplayHandle,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
     ) -> Result<Vec<Output>> {
         if !self.backend.kms().session.is_active() {
             return Ok(Vec::new());
+        }
+
+        let drm_node = DrmNode::from_dev_id(dev)?;
+        if self.backend.kms().drm_devices.contains_key(&drm_node) {
+            return self.device_changed(dev, night_light);
         }
 
         if let Some(allowlist) = dev_list_var("COSMIC_DRM_ALLOW_DEVICES") {
@@ -370,6 +376,7 @@ impl State {
                     &self.common.event_loop_handle,
                     self.common.config.dynamic_conf.screen_filter().clone(),
                     self.common.shell.clone(),
+                    self.common.night_light.clone(),
                     self.common.startup_done.clone(),
                 ) {
                     Ok((output, should_expose)) => {
@@ -399,7 +406,11 @@ impl State {
         Ok(wl_outputs)
     }
 
-    pub fn device_changed(&mut self, dev: dev_t) -> Result<Vec<Output>> {
+    pub fn device_changed(
+        &mut self,
+        dev: dev_t,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
+    ) -> Result<Vec<Output>> {
         if !self.backend.kms().session.is_active() {
             return Ok(Vec::new());
         }
@@ -457,6 +468,7 @@ impl State {
                         &self.common.event_loop_handle,
                         self.common.config.dynamic_conf.screen_filter().clone(),
                         self.common.shell.clone(),
+                        self.common.night_light.clone(),
                         self.common.startup_done.clone(),
                     ) {
                         Ok((output, should_expose)) => {
@@ -568,9 +580,11 @@ impl State {
             &self.common.event_loop_handle,
             &mut self.common.workspace_state.update(),
             &self.common.xdg_activation_state,
+            self.common.night_light.clone(),
             self.common.startup_done.clone(),
             &self.common.clock,
-        )?;
+        )
+?;
         self.common.refresh();
         Ok(())
     }
@@ -760,6 +774,7 @@ impl InnerDevice {
         evlh: &LoopHandle<'static, State>,
         screen_filter: ScreenFilter,
         shell: Arc<parking_lot::RwLock<Shell>>,
+        night_light: std::sync::Arc<parking_lot::Mutex<crate::dbus::night_light::NightLightState>>,
         startup_done: Arc<AtomicBool>,
     ) -> Result<(Output, bool)> {
         let output = self
@@ -823,6 +838,7 @@ impl InnerDevice {
                     evlh,
                     screen_filter,
                     shell,
+                    night_light,
                     startup_done,
                 ) {
                     Ok(data) => {
