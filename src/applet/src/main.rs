@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use chrono::{Local, Timelike};
 
 #[zbus::proxy(
-    interface = "io.github.kernel_ux.CosmicComp.NightLight",
+    interface = "com.system76.CosmicComp.NightLight",
     default_service = "com.system76.CosmicComp",
     default_path = "/com/system76/CosmicComp/NightLight"
 )]
