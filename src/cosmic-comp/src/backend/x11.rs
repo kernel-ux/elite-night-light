@@ -213,6 +213,7 @@ pub struct Surface {
 
 impl Surface {
     pub fn render_output(&mut self, renderer: &mut GlowRenderer, state: &mut Common) -> Result<()> {
+        self.screen_filter_state.night_light = Some(state.night_light.clone());
         let (mut buffer, age) = self
             .surface
             .buffer()

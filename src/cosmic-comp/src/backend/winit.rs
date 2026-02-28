@@ -48,6 +48,7 @@ pub struct WinitState {
 impl WinitState {
     #[profiling::function]
     pub fn render_output(&mut self, state: &mut Common) -> Result<()> {
+        self.screen_filter_state.night_light = Some(state.night_light.clone());
         let age = self.backend.buffer_age().unwrap_or(0);
         let (renderer, mut fb) = self
             .backend
