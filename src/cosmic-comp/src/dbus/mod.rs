@@ -24,11 +24,6 @@ pub fn init(
 ) -> Result<Vec<RegistrationToken>> {
     let mut tokens = Vec::new();
 
-    // ELITE NIGHT LIGHT: We initialize the DBus service here
-    // We need to wait for the State to be initialized to get Common, 
-    // but init is called BEFORE State::new.
-    // However, we can spawn a task that waits for the name.
-
     match block_on(power::init()) {
         Ok(power_daemon) => {
             let (tx, rx) = calloop::channel::channel();
@@ -107,26 +102,24 @@ pub fn ready(common: &Common) -> Result<()> {
         ),
     ]))?;
 
-    // ELITE NIGHT LIGHT: Register our custom DBus interface properly
+    // ELITE NIGHT LIGHT: We must use the blocking connection here 
+    // because ready() is called in a way that async tasks might be dropped or delayed.
     let state = common.night_light.clone();
-    let executor = common.async_executor.clone();
+    let interface = night_light::NightLightInterface { state };
     
-    executor.spawn_ok(async move {
-        match zbus::Connection::session().await {
-            Ok(conn) => {
-                let interface = night_light::NightLightInterface { state };
-                if let Err(e) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface).await {
-                    error!("Elite Night Light: Failed to export object: {}", e);
-                } else if let Err(e) = conn.request_name("com.system76.CosmicComp").await {
-                    // It's okay if name is already taken (e.g. by original compositor logic if we missed it)
-                    warn!("Elite Night Light: Failed to request name: {}", e);
-                } else {
-                    info!("Elite Night Light: D-Bus service registered successfully.");
-                }
+    match Connection::session() {
+        Ok(conn) => {
+            // We use the same connection that the compositor is already using!
+            if let Err(e) = conn.object_server().at("/com/system76/CosmicComp/NightLight", interface) {
+                error!("Elite Night Light: CRITICAL - Failed to export object: {}", e);
+            } else {
+                // DON'T request name here, the compositor handles its own name claim elsewhere.
+                // We just attach our object to the existing session connection.
+                info!("Elite Night Light: D-Bus object exported successfully on session bus.");
             }
-            Err(e) => error!("Elite Night Light: Failed to connect to session bus: {}", e),
         }
-    });
+        Err(e) => error!("Elite Night Light: CRITICAL - Failed to connect to session bus: {}", e),
+    }
 
     Ok(())
 }
