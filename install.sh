@@ -70,7 +70,22 @@ pkexec apt-mark hold cosmic-comp > /dev/null
 
 # 5. Panel & Desktop Entry
 echo "[5/5] Finalizing configuration..."
-pkexec cp "$BASE_DIR/res/$APP_ID.desktop" /usr/share/applications/
+
+# Generate correct desktop file with absolute path
+pkexec bash -c "cat > /usr/share/applications/$APP_ID.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=Elite Night Light
+Comment=Native hardware-level Night Light for COSMIC
+Exec=/usr/local/bin/$APP_ID
+Icon=weather-clear-night-symbolic
+Terminal=false
+Categories=System;Settings;
+Keywords=Night;Light;Blue;Filter;
+X-CosmicApplet=true
+X-CosmicAppletId=$APP_ID
+NoDisplay=true
+EOF"
 
 # Panel inject logic
 PANEL_CONF="$HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
@@ -78,10 +93,15 @@ if [ -f "$PANEL_CONF" ]; then
     if ! grep -q "\"$APP_ID\"" "$PANEL_CONF"; then
         sed -i "s/\"com.system76.CosmicAppletA11y\"/\"$APP_ID\",\n    \"com.system76.CosmicAppletA11y\"/" "$PANEL_CONF"
         echo "   -> Applet added to panel wings."
+    else
+        echo "   -> Applet already in panel configuration."
     fi
 fi
 
+# Refresh panel to show the icon immediately
+killall cosmic-panel || true
+
 echo "--------------------------------------------------"
 echo "SUCCESS: Elite Night Light is now live!"
-echo "NOTE: Please LOG OUT and LOG BACK IN to apply everything."
+echo "NOTE: The moon icon should now be visible in your panel."
 echo "--------------------------------------------------"
