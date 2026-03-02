@@ -103,5 +103,6 @@ killall cosmic-panel || true
 
 echo "--------------------------------------------------"
 echo "SUCCESS: Elite Night Light is now live!"
-echo "NOTE: The moon icon should now be visible in your panel."
+echo "NOTE: Please LOG OUT and LOG BACK IN to apply everything."
+echo "The moon icon will appear in your panel next to Accessibility."
 echo "--------------------------------------------------"
