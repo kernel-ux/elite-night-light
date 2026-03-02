@@ -2,12 +2,23 @@
 
 A professional, hardware-level Night Light integration for the COSMIC desktop environment on Pop!_OS.
 
-## 🚀 Features
-- **GPU-Accelerated Tinting:** Seamless orange tinting using custom fragment shaders.
-- **Native Cursor Support:** The mouse cursor stays perfectly white and sharp, bypassing the tint.
-- **Smart Scheduling:** Automatic activation from 7 PM to 7 AM with intelligent manual override.
-- **Persistence:** Remembers your settings (intensity and mode) across reboots.
-- **Lock-Free Engine:** Asynchronous DBus communication prevents desktop freezes.
+## 🚀 Core Features
+
+### 🖥️ Hardware-Level Engine
+- **GPU-Accelerated Tinting:** Seamless color transformation executed directly on the graphics card via custom OpenGL fragment shaders (`offscreen.frag`), ensuring zero CPU overhead.
+- **Native White Cursor Support:** Utilizes layer-aware rendering to bypass the post-processing tint for the mouse cursor. The cursor remains pure white, sharp, and highly visible, solving a common Linux desktop issue.
+- **Perfect Transparency:** Applies the color temperature adjustments *before* alpha channel re-multiplication, preventing dark edges and maintaining perfect system-wide transparency and shadows.
+
+### 🧠 Intelligent Automation
+- **Adaptive Manual Override:** The "Smart Schedule" doesn't just force a state. If you manually turn the light ON or OFF, it respects your choice and intelligently waits until the next scheduled phase change (7:00 AM or 7:00 PM) to re-engage automation.
+- **Time Category Memory:** The applet remembers the current "phase" of the day. If you shut down your PC in the afternoon and turn it on at night, it automatically detects the phase change and applies the correct Night Light state during boot.
+- **Instant Boot Application:** Settings are read and applied the millisecond the desktop loads, ensuring your screen is immediately comfortable without waiting for background timers to start.
+
+### ⚙️ Professional Architecture
+- **Lock-Free DBus Communication:** The `cosmic-comp` engine uses asynchronous, `LazyLock` Atomic variables to receive state changes. This means the 144Hz rendering thread never blocks or waits for the UI thread, preventing desktop freezes.
+- **Native COSMIC Applet:** The UI is built using the official `libcosmic` 1.0 applet pattern, integrating perfectly into the panel layout alongside official system applets.
+- **Zero-Warning Compilation:** Both the compositor engine and the GUI applet compile with zero warnings or errors, adhering to strict Rust coding standards.
+- **One-Click Installer/Uninstaller:** Includes a robust shell script that handles compilation, binary placement, panel injection, and provides a safe, automatic restoration to the factory Pop!_OS state if needed.
 
 ## 🛠️ Installation
 
