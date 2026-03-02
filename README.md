@@ -9,18 +9,37 @@ A professional, hardware-level Night Light integration for the COSMIC desktop en
 - **Persistence:** Remembers your settings (intensity and mode) across reboots.
 - **Lock-Free Engine:** Asynchronous DBus communication prevents desktop freezes.
 
-## 🛠️ Components
-1. **The Engine:** A patched version of `cosmic-comp` with custom rendering logic.
-2. **The Applet:** A native COSMIC panel applet for easy control.
-3. **CLI Tools:** `toggle-night-mode` for instant terminal control.
+## 🛠️ Installation
 
-## ⚖️ License & Credits
-This project includes code from the official [COSMIC Compositor](https://github.com/pop-os/cosmic-comp), which is licensed under the **GPL-3.0**. 
+This project modifies the core system compositor. It is high-performance and stable, but it must be built from source to ensure compatibility with your hardware.
 
-In accordance with the GPL-3.0 license:
-- This project is also licensed under **GPL-3.0**.
-- Modified source files include notices of changes.
-- Original copyrights belong to System76 and the COSMIC contributors.
+```bash
+# 1. Clone the repository
+git clone https://github.com/kernel-ux/elite-night-light.git
+cd elite-night-light
+
+# 2. Run the installer (this will build the project and may take a few minutes)
+chmod +x install.sh
+./install.sh
+
+# 3. Apply changes
+# Log out and Log back in to load the new engine.
+```
+
+## 🗑️ Uninstallation
+
+If you want to return to the official Pop!_OS compositor and remove all Elite components:
+
+```bash
+# Run the uninstaller
+chmod +x uninstall.sh
+./uninstall.sh
+
+# Log out and Log back in to restore the factory compositor.
+```
+
+## ⚖️ License
+Licensed under the **GPL-3.0**. Built using code from the official System76 COSMIC project.
 
 ---
 *Developed by Jeevan (kernel-ux). Not an official System76 project.*
