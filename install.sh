@@ -34,7 +34,9 @@ else
 fi
 
 # 2. Build Components
-echo "[2/5] Building Components (this may take a few minutes)..."
+echo "[2/5] Building Components..."
+echo "   -> NOTE: This process compiles over 200 files. It may take 5-15 minutes."
+echo "   -> Please do not close this terminal or shut down your PC."
 cd "$BASE_DIR/src/cosmic-comp"
 cargo build --release
 
