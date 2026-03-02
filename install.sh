@@ -13,63 +13,73 @@ echo "--------------------------------------------------"
 echo "ELITE NIGHT LIGHT: INSTALLER"
 echo "--------------------------------------------------"
 
-echo "[1/3] Installing GUI applet..."
-# We use the actual compiled binary name from the release folder
-cp "$BASE_DIR/src/applet/target/release/elite-night-light" "/usr/local/bin/$APP_ID"
-chmod +x "/usr/local/bin/$APP_ID"
+# 1. Dependency Check
+echo "[1/5] Checking for build dependencies..."
+REQUIRED_PKGS="rustc cargo libwayland-dev libxkbcommon-dev libgbm-dev libudev-dev libseat-dev pkg-config cmake git libinput-dev libdbus-1-dev libdisplay-info-dev libpipewire-0.3-dev"
 
-echo "[2/3] Installing scripts and desktop files..."
-cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
-chmod +x /usr/local/bin/toggle-night-mode
+MISSING_PKGS=""
+for pkg in $REQUIRED_PKGS; do
+    if ! dpkg -l | grep -q "^ii  $pkg " && ! dpkg -l | grep -q "^ii  $pkg:" ; then
+        MISSING_PKGS="$MISSING_PKGS $pkg"
+    fi
+done
 
-# Correct the desktop file Exec path
-cat > "/usr/share/applications/$APP_ID.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=Elite Night Light
-Comment=Native hardware-level Night Light for COSMIC
-Exec=$APP_ID
-Icon=weather-clear-night-symbolic
-Terminal=false
-Categories=System;Settings;
-Keywords=Night;Light;Blue;Filter;
-X-CosmicApplet=true
-NoDisplay=true
-EOF
+if [ -n "$MISSING_PKGS" ]; then
+    echo "   -> The following packages are required but missing:$MISSING_PKGS"
+    echo "   -> Installing missing dependencies (requires sudo)..."
+    pkexec apt-get update
+    pkexec apt-get install -y $MISSING_PKGS
+else
+    echo "   -> All build dependencies are satisfied."
+fi
 
-echo "[3/3] Patching COSMIC compositor..."
+# 2. Build Components
+echo "[2/5] Building Components (this may take a few minutes)..."
+cd "$BASE_DIR/src/cosmic-comp"
+cargo build --release
+
+cd "$BASE_DIR/src/applet"
+cargo build --release
+
+# 3. Install Binaries
+echo "[3/5] Installing binaries (requires sudo)..."
+pkexec killall "$APP_ID" || true
+pkexec cp "$BASE_DIR/src/applet/target/release/elite-night-light" "/usr/local/bin/$APP_ID"
+pkexec chmod +x "/usr/local/bin/$APP_ID"
+
+pkexec cp "$BASE_DIR/bin/toggle-night-mode" /usr/local/bin/
+pkexec chmod +x /usr/local/bin/toggle-night-mode
+
+# 4. Patch Compositor
+echo "[4/5] Patching COSMIC compositor..."
 COMP_SRC="$BASE_DIR/src/cosmic-comp/target/release/cosmic-comp"
 
 if [ ! -f "/usr/bin/cosmic-comp.backup" ]; then
     echo "   -> Creating backup of original compositor..."
-    cp /usr/bin/cosmic-comp /usr/bin/cosmic-comp.backup
+    pkexec cp /usr/bin/cosmic-comp /usr/bin/cosmic-comp.backup
 fi
 
-# Replace binary
-mv /usr/bin/cosmic-comp /usr/bin/cosmic-comp.old 2>/dev/null || true
-cp "$COMP_SRC" /usr/bin/cosmic-comp
-chmod +x /usr/bin/cosmic-comp
-rm -f /usr/bin/cosmic-comp.old
+pkexec mv /usr/bin/cosmic-comp /usr/bin/cosmic-comp.old 2>/dev/null || true
+pkexec cp "$COMP_SRC" /usr/bin/cosmic-comp
+pkexec chmod +x /usr/bin/cosmic-comp
+pkexec rm -f /usr/bin/cosmic-comp.old
 
-# Lock package
-apt-mark hold cosmic-comp > /dev/null
+pkexec apt-mark hold cosmic-comp > /dev/null
 
-echo "[4/4] Adding applet to your panel wings..."
-PANEL_CONF="/home/jimmy/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
+# 5. Panel & Desktop Entry
+echo "[5/5] Finalizing configuration..."
+pkexec cp "$BASE_DIR/res/$APP_ID.desktop" /usr/share/applications/
+
+# Panel inject logic
+PANEL_CONF="$HOME/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings"
 if [ -f "$PANEL_CONF" ]; then
-    if ! grep -q "$APP_ID" "$PANEL_CONF"; then
-        # Insert before A11y applet
-        sed -i "s/\"com.system76.CosmicAppletA11y\"/\"$APP_ID\", \"com.system76.CosmicAppletA11y\"/" "$PANEL_CONF"
+    if ! grep -q "\"$APP_ID\"" "$PANEL_CONF"; then
+        sed -i "s/\"com.system76.CosmicAppletA11y\"/\"$APP_ID\",\n    \"com.system76.CosmicAppletA11y\"/" "$PANEL_CONF"
         echo "   -> Applet added to panel wings."
-    else
-        echo "   -> Applet already in panel configuration."
     fi
 fi
-
-echo "Finalizing configuration..."
 
 echo "--------------------------------------------------"
 echo "SUCCESS: Elite Night Light is now live!"
 echo "NOTE: Please LOG OUT and LOG BACK IN to apply everything."
-echo "The moon icon will appear in your panel next to Accessibility."
 echo "--------------------------------------------------"
