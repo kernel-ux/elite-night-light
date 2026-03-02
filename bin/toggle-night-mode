@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Elite Night Mode Toggle - Terminal Edition
+
+SERVICE="io.github.kernel_ux.EliteNightLight"
+OBJ="/io/github/kernel_ux/EliteNightLight"
+IFACE="io.github.kernel_ux.EliteNightLight"
+
+COMMAND=$1
+
+if [[ "$COMMAND" == "1" ]]; then
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b true
+    busctl --user call $SERVICE $OBJ $IFACE SetLevel y 1
+    echo "🌙 Soft Night Light Applied."
+    exit 0
+elif [[ "$COMMAND" == "2" ]]; then
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b true
+    busctl --user call $SERVICE $OBJ $IFACE SetLevel y 2
+    echo "🌙 Warm Night Light Applied."
+    exit 0
+elif [[ "$COMMAND" == "3" ]]; then
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b true
+    busctl --user call $SERVICE $OBJ $IFACE SetLevel y 3
+    echo "🌙 Strong Night Light Applied."
+    exit 0
+elif [[ "$COMMAND" == "off" ]]; then
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b false
+    echo "☀️ Night Light Disabled."
+    exit 0
+fi
+
+# Toggle logic
+CURRENT_STATE=$(busctl --user get-property $SERVICE $OBJ $IFACE Enabled | awk '{print $2}')
+
+if [[ "$CURRENT_STATE" == "true" ]]; then
+    echo "☀️ Night Mode is ON. Turning it OFF..."
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b false
+else
+    echo "🌙 Night Mode is OFF. Turning it ON (Level 1)..."
+    busctl --user call $SERVICE $OBJ $IFACE SetLevel y 1
+    busctl --user call $SERVICE $OBJ $IFACE SetEnabled b true
+fi

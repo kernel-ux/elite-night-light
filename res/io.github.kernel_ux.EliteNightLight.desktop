@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Elite Night Light
+Comment=Native hardware-level Night Light for COSMIC
+Exec=cosmic-applet-night-light
+Icon=weather-clear-night-symbolic
+Terminal=false
+Categories=System;Settings;
+Keywords=Night;Light;Blue;Filter;
+X-CosmicApplet=true
+NoDisplay=true
