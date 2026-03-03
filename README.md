@@ -2,6 +2,13 @@
 
 A professional, hardware-level Night Light integration for the COSMIC desktop environment on Pop!_OS.
 
+<img width="556" height="344" alt="Screenshot_2026-03-03_11-19-34" src="https://github.com/user-attachments/assets/81f9eeb7-56ea-478c-88e0-8448290f1d50" />
+
+<img width="342" height="195" alt="Screenshot_2026-03-03_11-24-17" src="https://github.com/user-attachments/assets/f3458dfb-96d1-458c-ad59-68096dd04a76" />
+
+
+
+
 ## 🚀 Core Features
 
 ### 🖥️ Hardware-Level Engine
